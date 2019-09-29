@@ -2,6 +2,30 @@
 Vim GDB front-end for neovim: https://github.com/huawenyu/new-gdb.vim  
 `Prerequire`: Must install [new.vim plugin](https://github.com/huawenyu/new.vim) first.
 
+## Quickstart
+
+    ### Suppose we use [vim-plug](https://github.com/junegunn/vim-plug)
+    ### And already we add the plug to our `.vimrc`
+        Plug 'huawenyu/new.vim', Cond(has('nvim')) | Plug 'huawenyu/new-gdb.vim', Cond(has('nvim'))
+    ### And install the plug
+        vi's command: ":PlugInstall"
+
+    ### So the following dir exist: 
+    $ cd ~/.vim/bundle/new-gdb.vim
+    $ cd autoload/examples
+    $ ls
+        t1.c
+    $ gcc -g -O0 -o t1 t1.c
+    $ vi t1.c
+    [vim-command-mode] ":Nbgdb t1"
+    Focus the source code t1.c windows, and Press:
+      F5   next
+      S-F5 skip
+      F6   step
+      S-F6 return to caller
+      F8   eval current value
+    <end>
+
 ## feature
   - gdb commands maps: next, step, finish, continue, etc.
   - breakpoints:
@@ -70,15 +94,6 @@ Add the following line to the plugins regions of ``~/.vimrc``:
 
 ```vim
 Plug 'huawenyu/new.vim', Cond(has('nvim')) | Plug 'huawenyu/new-gdb.vim', Cond(has('nvim'))
-```
-
-
-    
-## Installing when using [Pathogen](https://github.com/tpope/vim-pathogen)
-
-```Shell
-    cd ~/.vim/bundle
-    git clone git@github.com:solars/github-vim.git
 ```
 
 # Usage

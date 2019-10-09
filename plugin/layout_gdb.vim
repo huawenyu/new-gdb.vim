@@ -342,6 +342,10 @@ function! s:prototype.RefreshBreakpointSigns(mode)
         let buf = bufnr(next_val['file'])
         let linenr = next_val['line']
 
+        if buf < 0
+            continue
+        endif
+
         if a:mode == 1 && next_val['change']
            \ && has_key(next_val, 'sign_id')
             exe 'sign unplace '. next_val['sign_id']

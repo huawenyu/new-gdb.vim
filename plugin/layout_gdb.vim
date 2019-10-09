@@ -1241,7 +1241,7 @@ function! NeobuggerCommandStr()
         return 'Nbgdbattach '. g:neogdb_attach_remote_str
     else
         let s:gdb_local_remote = 1
-        return 'Nbgdb t1'
+        return 'Nbgdb '. expand('%:t:r')
     endif
 endfunction
 

@@ -103,7 +103,7 @@ let s:gdb_control = {
         \          },
         \      ],
         \      "start": [
-        \          {   "match":   ['(gdb) '],
+        \          {   "match":   ['(gdb) ', '(Pdb) '],
         \              "hint":    "start gdb ...",
         \              "action":  "on_start",
         \              "event":   "startgdb",
@@ -149,10 +149,12 @@ let s:gdb_control = {
         \                          '\v/([\h\d/]+):(\d+):\d+',
         \                          '\v^#\d+ .{-} \(\) at (.+):(\d+)',
         \                          '\v at /([\h\d/]+):(\d+)',
+        \                          '\v (\w+py)\((\d+)\) @todo wilson',
         \                         ],
         \              "comment": "mode=Local: already start now",
         \              "hint":    "gdb.Jump",
         \              "test":    "/home/user/tmp/t1.c:35:414:beg:0x4011c1",
+        \              "test1":   "> /home/user/tmp/client1.py(1)<module>()",
         \              "action":  "on_jump",
         \              "next":    "pause",
         \          },
@@ -324,13 +326,12 @@ let s:gdb_control = {
         \ }
 
 
-" debug_mode: 0 local, 1 connect server, 2 attach pid
 let s:prototype = {}
 let s:this = s:prototype
 let s:this._show_backtrace  = 1
 let s:this._show_breakpoint = 1
 let s:this._has_breakpoints= 0
-let s:this.debug_mode = 0
+let s:this.debug_mode = 0        | " debug_mode: 0 local, 1 connect server, 2 attach pid
 let s:this.debug_bin  = 't1'
 let s:this.debug_server = ["127.0.0.1", "9999"]
 let s:this.debug_args = {}
@@ -792,9 +793,14 @@ function! s:prototype.on_open(model, state, match_list) abort
     call self.Map("", "nmap")
     call self.Map('client', "tmap")
 
-    "gdb -ex 'echo neobugger_starting\n' -q -f", 'sysinit/init'
-    let cmdstr = "gdb --command ". s:dir. "/gdbinit -q -f ". s:this.debug_bin . "\<cr>"
-    call new#util#post('client', cmdstr)
+    if s:cur_extension ==# 'py'
+        let cmdstr = "python -m pdb ". s:this.debug_bin . "\<cr>"
+        call new#util#post('client', cmdstr)
+    else
+        "gdb -ex 'echo neobugger_starting\n' -q -f", 'sysinit/init'
+        let cmdstr = "gdb --command ". s:dir. "/gdbinit -q -f ". s:this.debug_bin . "\<cr>"
+        call new#util#post('client', cmdstr)
+    endif
 endfunction
 
 function! s:prototype.on_start(model, state, match_list) abort
@@ -831,8 +837,12 @@ function! s:prototype.on_start(model, state, match_list) abort
 
     if g:gdb_auto_run
         if s:this.debug_mode == 0
-            call new#util#post('client', "start\n")
-            call new#util#post('client', "parser_echo neobugger_local_start\n")
+            if s:cur_extension ==# 'py'
+                call new#util#post('client', "run\n")
+            else
+                call new#util#post('client', "start\n")
+                call new#util#post('client', "parser_echo neobugger_local_start\n")
+            endif
         elseif s:this.debug_mode == 1
             " server: dut.py -h dut -u admin -p "" -t "gdb:wad"
             call new#util#post('server', ''. g:neogdb_gdbserver . ' -h '. s:this.debug_server[0] . ' '. join(s:this.debug_args['args'][1:], ' '). "\n")
@@ -1249,14 +1259,20 @@ endif
 
 
 " Helper options {{{1
-let s:gdb_local_remote = 0
+let s:gdb_command_state = 0
+let s:cur_extension = ''
 function! NeobuggerCommandStr()
-    if s:gdb_local_remote
-        let s:gdb_local_remote = 0
-        return 'Nbgdbattach '. g:neogdb_attach_remote_str
+    let s:cur_extension = expand('%:e')
+    if s:cur_extension ==# 'py'
+        return 'Nbgdb '. fnamemodify(expand("%"), ":~:.")
     else
-        let s:gdb_local_remote = 1
-        return 'Nbgdb '. expand('%:t:r')
+        if s:gdb_command_state
+            let s:gdb_command_state = 0
+            return 'Nbgdbattach '. g:neogdb_attach_remote_str
+        else
+            let s:gdb_command_state = 1
+            return 'Nbgdb '. expand('%:t:r')
+        endif
     endif
 endfunction
 

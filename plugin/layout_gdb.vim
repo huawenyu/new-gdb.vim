@@ -149,7 +149,7 @@ let s:gdb_control = {
         \                          '\v/([\h\d/]+):(\d+):\d+',
         \                          '\v^#\d+ .{-} \(\) at (.+):(\d+)',
         \                          '\v at /([\h\d/]+):(\d+)',
-        \                          '\v (\w+py)\((\d+)\) @todo wilson',
+        \                          '\v^\> ([\/\-\_\.a-zA-Z0-9]+)\((\d+)\)',
         \                         ],
         \              "comment": "mode=Local: already start now",
         \              "hint":    "gdb.Jump",
@@ -184,9 +184,12 @@ let s:gdb_control = {
         \                          '\v/([\h\d/]+):(\d+):\d+',
         \                          '\v^#\d+ .{-} \(\) at (.+):(\d+)',
         \                          '\v at /([\h\d/]+):(\d+)',
+        \                          '\v^\> ([\/\-\_\.a-zA-Z0-9]+)\((\d+)\)',
         \                         ],
         \              "comment": "gdb pause and show code line",
         \              "hint":    "gdb.Jump",
+        \              "test":    "/home/user/tmp/t1.c:35:414:beg:0x4011c1",
+        \              "test1":   "> /home/user/tmp/client1.py(1)<module>()",
         \              "action":  "on_jump",
         \              "next":    "pause",
         \          },
@@ -224,9 +227,12 @@ let s:gdb_control = {
         \                          '\v/([\h\d/]+):(\d+):\d+',
         \                          '\v^#\d+ .{-} \(\) at (.+):(\d+)',
         \                          '\v at /([\h\d/]+):(\d+)',
+        \                          '\v^\> ([\/\-\_\.a-zA-Z0-9]+)\((\d+)\)',
         \                         ],
         \              "comment": "gdb pause and show code line",
         \              "hint":    "gdb.Jump",
+        \              "test":    "/home/user/tmp/t1.c:35:414:beg:0x4011c1",
+        \              "test1":   "> /home/user/tmp/client1.py(1)<module>()",
         \              "action":  "on_jump",
         \              "next":    "pause",
         \          },
@@ -838,7 +844,7 @@ function! s:prototype.on_start(model, state, match_list) abort
     if g:gdb_auto_run
         if s:this.debug_mode == 0
             if s:cur_extension ==# 'py'
-                call new#util#post('client', "run\n")
+                call new#util#post('client', "where\n")
             else
                 call new#util#post('client', "start\n")
                 call new#util#post('client', "parser_echo neobugger_local_start\n")

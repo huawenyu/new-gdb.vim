@@ -614,19 +614,32 @@ endfunction
 " @type 0 line-break, 1 function-break
 function! s:prototype.ToggleBreak()
     let filenm = bufname("%")
-    let linenr = line(".")
+    let cur_line = getline('.')
+    let linenr = line('.')
     let colnr = col(".")
     let cword = expand("<cword>")
-    let cfuncline = self.GetCFunLinenr()
 
     let fname = fnamemodify(filenm, ':p:.')
     let type = 0
-    if linenr == cfuncline
-        let type = 1
+    if s:cur_extension ==# 'py'
+        " echo match("  let cur_line = getline('.')", '\v^(\W*)let')
+        let idx = match(cur_line, '\v^(\W*)def')
+        if idx >= 0
+            let type = 1
+        endif
+    else
+        let cfuncline = self.GetCFunLinenr()
+        if linenr == cfuncline
+            let type = 1
+        endif
+    endif
+
+    if type == 1
         let file_breakpoints = fname .':'.cword
     else
         let file_breakpoints = fname .':'.linenr
     endif
+
 
     let mode = 0
     let old_value = get(s:breakpoints, file_breakpoints, {})

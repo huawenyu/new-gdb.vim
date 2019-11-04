@@ -1,6 +1,7 @@
-if !has("nvim")
+if exists('g:loaded_neo_gdb') || !has("nvim") || &compatible
     finish
 endif
+let g:loaded_neo_gdb = 1
 
 if !exists("s:init")
     let s:init = 1

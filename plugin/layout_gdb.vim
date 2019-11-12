@@ -335,9 +335,11 @@ let s:gdb_control = {
 
 let s:prototype = {}
 let s:this = s:prototype
-let s:this._show_backtrace  = 1
+let s:this._show_backtrace = 1
 let s:this._show_breakpoint = 1
-let s:this._has_breakpoints= 0
+let s:this._server_exited = 0
+let s:this._reconnect = 0
+let s:this._has_breakpoints = 0
 let s:this.debug_mode = 0        | " debug_mode: 0 local, 1 connect server, 2 attach pid
 let s:this.debug_bin  = 't1'
 let s:this.debug_server = ["127.0.0.1", "9999"]
@@ -458,9 +460,9 @@ function! s:prototype.RefreshBreakpoints(mode)
     endif
 
     if a:mode == 0 || a:mode == 2
-        if self._has_breakpoints
+        if s:this._has_breakpoints
             call self.Send('delete')
-            let self._has_breakpoints = 0
+            let s:this._has_breakpoints = 0
         endif
     endif
 
@@ -478,7 +480,7 @@ function! s:prototype.RefreshBreakpoints(mode)
                 endif
 
                 if a:mode == 0 || (a:mode == 1 && next_val['change'])
-                    let self._has_breakpoints = 1
+                    let s:this._has_breakpoints = 1
                     call self.Send('break '. next_val['cmd'])
                 endif
             endif
@@ -512,7 +514,7 @@ function! s:prototype.Jump(file, line)
     "call self.SendJob("for x in {1..15}; do if [ ! -f /tmp/gdb.bt ]; then sleep 0.2; else  echo 'jobDoneLoadBacktrace'; break; fi; done")
 
     "" Method-2: Using syncronize to parse response
-    if self._show_backtrace && filereadable(s:gdb_bt_qf)
+    if s:this._show_backtrace && filereadable(s:gdb_bt_qf)
         exec "silent! cgetfile " . s:gdb_bt_qf
         call delete(s:gdb_bt_qf)
     endif
@@ -554,14 +556,14 @@ endfunction
 
 
 function! s:prototype.Breakpoints(file)
-    if self._show_breakpoint && filereadable(a:file)
+    if s:this._show_breakpoint && filereadable(a:file)
         exec "silent lgetfile " . a:file
     endif
 endfunction
 
 
 function! s:prototype.Stack(file)
-    if self._show_backtrace && filereadable(a:file)
+    if s:this._show_backtrace && filereadable(a:file)
         exec "silent! cgetfile " . a:file
     endif
 endfunction
@@ -594,7 +596,7 @@ function! s:prototype.Breaks2Qf()
     endfor
 
     call writefile(split(join(list2, "\n"), "\n"), s:gdb_break_qf)
-    if self._show_breakpoint && filereadable(s:gdb_break_qf)
+    if s:this._show_breakpoint && filereadable(s:gdb_break_qf)
         exec "silent lgetfile " . s:gdb_break_qf
     endif
 endfunction
@@ -836,11 +838,11 @@ function! s:prototype.on_start(model, state, match_list) abort
 
 
     if s:this.debug_mode == 0
-        let self._show_backtrace = g:neobugger_local_backtrace
-        let self._show_breakpoint = g:neobugger_local_breakpoint
+        let s:this._show_backtrace = g:neobugger_local_backtrace
+        let s:this._show_breakpoint = g:neobugger_local_breakpoint
     else
-        let self._show_backtrace = g:neobugger_server_backtrace
-        let self._show_breakpoint = g:neobugger_server_breakpoint
+        let s:this._show_backtrace = g:neobugger_server_backtrace
+        let s:this._show_breakpoint = g:neobugger_server_breakpoint
     endif
 
     silent! call s:log.info("Load breaks ...")
@@ -871,7 +873,7 @@ function! s:prototype.on_start(model, state, match_list) abort
     endif
 
     " Create quickfix: lgetfile, cgetfile
-    if self._show_backtrace && win_gotoid(g:vmwRuntime.wid_main) == 1
+    if s:this._show_backtrace && win_gotoid(g:vmwRuntime.wid_main) == 1
         if !filereadable(s:gdb_bt_qf)
             exec "silent! vimgrep " . cword ." ". expand("%")
         else
@@ -880,7 +882,7 @@ function! s:prototype.on_start(model, state, match_list) abort
         silent! copen
     endif
 
-    if self._show_breakpoint && win_gotoid(g:vmwRuntime.wid_main) == 1
+    if s:this._show_breakpoint && win_gotoid(g:vmwRuntime.wid_main) == 1
         if !filereadable(s:gdb_break_qf)
             exec "silent! lvimgrep " . cword ." ". expand("%")
         else
@@ -891,7 +893,7 @@ function! s:prototype.on_start(model, state, match_list) abort
 endfunction
 
 function! s:prototype.on_load_bt(...)
-    if self._show_backtrace && filereadable(s:gdb_bt_qf)
+    if s:this._show_backtrace && filereadable(s:gdb_bt_qf)
         exec "cgetfile " . s:gdb_bt_qf
         "call utilquickfix#RelativePath()
     endif
@@ -936,7 +938,7 @@ function! s:prototype.on_parseend(...)
 endfunction
 
 function! s:prototype.on_retry(...)
-    if self._server_exited
+    if s:this._server_exited
         return
     endif
     sleep 1
@@ -954,7 +956,7 @@ endfunction
 
 
 function s:prototype.on_remote_debugging(...)
-    let self._remote_debugging = 1
+    let s:this._remote_debugging = 1
     call state#Switch('client', 'pause', 0)
 endfunction
 
@@ -986,7 +988,7 @@ endfunction
 
 
 function! s:prototype.on_disconnected(...)
-    if !self._server_exited && self._reconnect
+    if !s:this._server_exited && s:this._reconnect
         " Refresh to force a delete of all watchpoints
         "call self.RefreshBreakpoints(2)
         sleep 1
@@ -996,7 +998,7 @@ function! s:prototype.on_disconnected(...)
 endfunction
 
 function! s:prototype.on_exit(...)
-    let self._server_exited = 1
+    let s:this._server_exited = 1
 endfunction
 
 

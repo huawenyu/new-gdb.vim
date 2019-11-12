@@ -335,15 +335,16 @@ let s:gdb_control = {
 
 let s:prototype = {}
 let s:this = s:prototype
+let s:this.debug_mode = 0        | " debug_mode: 0 local, 1 connect server, 2 attach pid
+let s:this.debug_bin  = 't1'
+let s:this.debug_server = ["127.0.0.1", "9999"]
+let s:this.debug_args = {}
+
 let s:this._show_backtrace = 1
 let s:this._show_breakpoint = 1
 let s:this._server_exited = 0
 let s:this._reconnect = 0
 let s:this._has_breakpoints = 0
-let s:this.debug_mode = 0        | " debug_mode: 0 local, 1 connect server, 2 attach pid
-let s:this.debug_bin  = 't1'
-let s:this.debug_server = ["127.0.0.1", "9999"]
-let s:this.debug_args = {}
 
 call NewAddLayout(s:gdb_local_vert, s:gdb_control, s:prototype)
 call NewAddLayout(s:gdb_local_horiz, s:gdb_control, s:prototype)
@@ -394,9 +395,9 @@ function! s:prototype.Kill()
     call self.Map('client', "unmap")
     call self.Update_current_line_sign(0)
 
-    if s:this.debug_mode == 0
+    if self.debug_mode == 0
         call new#util#post('client', "quit\n")
-    elseif s:this.debug_mode == 1
+    elseif self.debug_mode == 1
         call new#util#post('client', "monitor exit\n")
     endif
 endfunction
@@ -430,7 +431,7 @@ endfunction
 
 
 function! s:prototype.Attach()
-    call new#util#post('client', "target remote ". join(s:this.debug_server, ":"). "\n")
+    call new#util#post('client', "target remote ". join(self.debug_server, ":"). "\n")
 endfunction
 
 
@@ -460,9 +461,9 @@ function! s:prototype.RefreshBreakpoints(mode)
     endif
 
     if a:mode == 0 || a:mode == 2
-        if s:this._has_breakpoints
+        if self._has_breakpoints
             call self.Send('delete')
-            let s:this._has_breakpoints = 0
+            let self._has_breakpoints = 0
         endif
     endif
 
@@ -480,7 +481,7 @@ function! s:prototype.RefreshBreakpoints(mode)
                 endif
 
                 if a:mode == 0 || (a:mode == 1 && next_val['change'])
-                    let s:this._has_breakpoints = 1
+                    let self._has_breakpoints = 1
                     call self.Send('break '. next_val['cmd'])
                 endif
             endif
@@ -514,7 +515,7 @@ function! s:prototype.Jump(file, line)
     "call self.SendJob("for x in {1..15}; do if [ ! -f /tmp/gdb.bt ]; then sleep 0.2; else  echo 'jobDoneLoadBacktrace'; break; fi; done")
 
     "" Method-2: Using syncronize to parse response
-    if s:this._show_backtrace && filereadable(s:gdb_bt_qf)
+    if self._show_backtrace && filereadable(s:gdb_bt_qf)
         exec "silent! cgetfile " . s:gdb_bt_qf
         call delete(s:gdb_bt_qf)
     endif
@@ -556,14 +557,14 @@ endfunction
 
 
 function! s:prototype.Breakpoints(file)
-    if s:this._show_breakpoint && filereadable(a:file)
+    if self._show_breakpoint && filereadable(a:file)
         exec "silent lgetfile " . a:file
     endif
 endfunction
 
 
 function! s:prototype.Stack(file)
-    if s:this._show_backtrace && filereadable(a:file)
+    if self._show_backtrace && filereadable(a:file)
         exec "silent! cgetfile " . a:file
     endif
 endfunction
@@ -596,7 +597,7 @@ function! s:prototype.Breaks2Qf()
     endfor
 
     call writefile(split(join(list2, "\n"), "\n"), s:gdb_break_qf)
-    if s:this._show_breakpoint && filereadable(s:gdb_break_qf)
+    if self._show_breakpoint && filereadable(s:gdb_break_qf)
         exec "silent lgetfile " . s:gdb_break_qf
     endif
 endfunction
@@ -816,11 +817,11 @@ function! s:prototype.on_open(model, state, match_list) abort
     call self.Map('client', "tmap")
 
     if s:cur_extension ==# 'py'
-        let cmdstr = "python -m pdb ". s:this.debug_bin . "\<cr>"
+        let cmdstr = "python -m pdb ". self.debug_bin . "\<cr>"
         call new#util#post('client', cmdstr)
     else
         "gdb -ex 'echo neobugger_starting\n' -q -f", 'sysinit/init'
-        let cmdstr = "gdb --command ". s:dir. "/gdbinit -q -f ". s:this.debug_bin . "\<cr>"
+        let cmdstr = "gdb --command ". s:dir. "/gdbinit -q -f ". self.debug_bin . "\<cr>"
         call new#util#post('client', cmdstr)
     endif
 endfunction
@@ -837,12 +838,12 @@ function! s:prototype.on_start(model, state, match_list) abort
     let cword = expand("<cword>")
 
 
-    if s:this.debug_mode == 0
-        let s:this._show_backtrace = g:neobugger_local_backtrace
-        let s:this._show_breakpoint = g:neobugger_local_breakpoint
+    if self.debug_mode == 0
+        let self._show_backtrace = g:neobugger_local_backtrace
+        let self._show_breakpoint = g:neobugger_local_breakpoint
     else
-        let s:this._show_backtrace = g:neobugger_server_backtrace
-        let s:this._show_breakpoint = g:neobugger_server_breakpoint
+        let self._show_backtrace = g:neobugger_server_backtrace
+        let self._show_breakpoint = g:neobugger_server_breakpoint
     endif
 
     silent! call s:log.info("Load breaks ...")
@@ -858,22 +859,22 @@ function! s:prototype.on_start(model, state, match_list) abort
     endif
 
     if g:gdb_auto_run
-        if s:this.debug_mode == 0
+        if self.debug_mode == 0
             if s:cur_extension ==# 'py'
                 call new#util#post('client', "where\n")
             else
                 call new#util#post('client', "start\n")
                 call new#util#post('client', "parser_echo neobugger_local_start\n")
             endif
-        elseif s:this.debug_mode == 1
+        elseif self.debug_mode == 1
             " server: dut.py -h dut -u admin -p "" -t "gdb:wad"
-            call new#util#post('server', ''. g:neogdb_gdbserver . ' -h '. s:this.debug_server[0] . ' '. join(s:this.debug_args['args'][1:], ' '). "\n")
-            "call new#util#post('client', "target remote ". join(s:this.debug_server, ":"). "\n")
+            call new#util#post('server', ''. g:neogdb_gdbserver . ' -h '. self.debug_server[0] . ' '. join(self.debug_args['args'][1:], ' '). "\n")
+            "call new#util#post('client', "target remote ". join(self.debug_server, ":"). "\n")
         endif
     endif
 
     " Create quickfix: lgetfile, cgetfile
-    if s:this._show_backtrace && win_gotoid(g:vmwRuntime.wid_main) == 1
+    if self._show_backtrace && win_gotoid(g:vmwRuntime.wid_main) == 1
         if !filereadable(s:gdb_bt_qf)
             exec "silent! vimgrep " . cword ." ". expand("%")
         else
@@ -882,7 +883,7 @@ function! s:prototype.on_start(model, state, match_list) abort
         silent! copen
     endif
 
-    if s:this._show_breakpoint && win_gotoid(g:vmwRuntime.wid_main) == 1
+    if self._show_breakpoint && win_gotoid(g:vmwRuntime.wid_main) == 1
         if !filereadable(s:gdb_break_qf)
             exec "silent! lvimgrep " . cword ." ". expand("%")
         else
@@ -893,7 +894,7 @@ function! s:prototype.on_start(model, state, match_list) abort
 endfunction
 
 function! s:prototype.on_load_bt(...)
-    if s:this._show_backtrace && filereadable(s:gdb_bt_qf)
+    if self._show_backtrace && filereadable(s:gdb_bt_qf)
         exec "cgetfile " . s:gdb_bt_qf
         "call utilquickfix#RelativePath()
     endif
@@ -938,7 +939,7 @@ function! s:prototype.on_parseend(...)
 endfunction
 
 function! s:prototype.on_retry(...)
-    if s:this._server_exited
+    if self._server_exited
         return
     endif
     sleep 1
@@ -956,14 +957,14 @@ endfunction
 
 
 function s:prototype.on_remote_debugging(...)
-    let s:this._remote_debugging = 1
+    let self._remote_debugging = 1
     call state#Switch('client', 'pause', 0)
 endfunction
 
 
 function! s:prototype.on_client_conn_succ(...)
     if g:gdb_auto_run
-        if s:this.debug_mode == 1
+        if self.debug_mode == 1
             " Should not continue, and pause for customize set breakpoints
             "call new#util#post('client', "continue\n")
         else
@@ -988,7 +989,7 @@ endfunction
 
 
 function! s:prototype.on_disconnected(...)
-    if !s:this._server_exited && s:this._reconnect
+    if !self._server_exited && self._reconnect
         " Refresh to force a delete of all watchpoints
         "call self.RefreshBreakpoints(2)
         sleep 1
@@ -998,7 +999,7 @@ function! s:prototype.on_disconnected(...)
 endfunction
 
 function! s:prototype.on_exit(...)
-    let s:this._server_exited = 1
+    let self._server_exited = 1
 endfunction
 
 

@@ -821,7 +821,13 @@ function! s:prototype.on_open(model, state, match_list) abort
         call new#util#post('client', cmdstr)
     else
         "gdb -ex 'echo neobugger_starting\n' -q -f", 'sysinit/init'
-        let cmdstr = "gdb --command ". s:dir. "/gdbinit -q -f ". self.debug_bin . "\<cr>"
+        silent! call s:log.debug(l:__func__, " mode=", self.debug_mode, " bin=", self.debug_bin, " args=", self.debug_args)
+
+        if self.debug_mode == 0 && !empty(self.debug_args['args'])
+            let cmdstr = "gdb --command ". s:dir. "/gdbinit -q -f --args ". self.debug_bin ." ". join(self.debug_args['args'], ' '). "\<cr>"
+        else
+            let cmdstr = "gdb --command ". s:dir. "/gdbinit -q -f --args ". self.debug_bin . "\<cr>"
+        endif
         call new#util#post('client', cmdstr)
     endif
 endfunction
@@ -1097,10 +1103,14 @@ endfunction
 " InstanceGdb {{{1
 
 function! NeobuggerNew(mode, bin, args)
+    let l:__func__ = "NeobuggerNew() "
+
     " mode: 0 local, 1 connect server, 2 attach pid
     let s:this.debug_mode = 0
     let s:this.debug_bin = a:bin
     let s:this.debug_args = a:args
+
+    silent! call s:log.debug(l:__func__, "mode=", a:mode, " bin=", a:bin, " args=", a:args)
 
     if has_key(s:this.debug_args, 'args')
         let l:arg_list = s:this.debug_args['args']

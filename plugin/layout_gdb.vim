@@ -548,10 +548,15 @@ function! s:prototype.Jump(file, line)
     "exec "e ". fname
     "exec ':' a:line | m'
 
+    if 0 && "Example"
+        let myfunc = hw#functor#new({a, b -> execute('echo "Output2: " . a. " sec=". b', '')}, "hello world")
+        call myfunc.do("wilson", "good")
+    endif
+
     let self._current_line = a:line
     if cwindow != g:vmwRuntime.wid_main
         if 1 == win_gotoid(cwindow) && cbuftype ==# 'terminal'
-            call hw#tasklist#add({ -> execute('startinsert', '') })
+            call hw#tasklist#add(hw#functor#new({ -> execute('startinsert', '') }, ""))
         endif
     endif
 

@@ -521,6 +521,8 @@ function! s:prototype.Jump(file, line)
     endif
 
     let cwindow = win_getid()
+    let cwinnr = winnr()
+    let cbuftype = &buftype
     if cwindow != g:vmwRuntime.wid_main
         if win_gotoid(g:vmwRuntime.wid_main) != 1
             return
@@ -548,10 +550,11 @@ function! s:prototype.Jump(file, line)
 
     let self._current_line = a:line
     if cwindow != g:vmwRuntime.wid_main
-        call win_gotoid(cwindow)
-        " neovim v4.0(night) not work
-        "startinsert
+        if 1 == win_gotoid(cwindow) && cbuftype ==# 'terminal'
+            call hw#tasklist#add({ -> execute('startinsert', '') })
+        endif
     endif
+
     call self.Update_current_line_sign(1)
 endfunction
 

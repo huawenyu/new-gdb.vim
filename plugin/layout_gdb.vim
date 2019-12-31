@@ -548,7 +548,7 @@ function! s:prototype.Jump(file, line)
     "exec "e ". fname
     "exec ':' a:line | m'
 
-    if 0 && "Example"
+    if 0 && '@Comment'
         let myfunc = hw#functor#new({a, b -> execute('echo "Output2: " . a. " sec=". b', '')}, "hello world")
         call myfunc.do("wilson", "good")
     endif

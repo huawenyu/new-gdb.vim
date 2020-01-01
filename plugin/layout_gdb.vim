@@ -910,8 +910,8 @@ function! s:prototype.on_start(model, state, match_list) abort
                 \ hw#functor#new(
                 \    {-> execute(
                 \       ['echomsg "Debug ready to go."',
+                \        'call win_gotoid(g:vmwRuntime.wid_main)',
                 \        'windo redraw!',
-                \        'call new#util#post("client", "info line\n")',
                 \       ], '')
                 \    }, ""
                 \  )

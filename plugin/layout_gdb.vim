@@ -556,7 +556,7 @@ function! s:prototype.Jump(file, line)
     let self._current_line = a:line
     if cwindow != g:vmwRuntime.wid_main
         if 1 == win_gotoid(cwindow) && cbuftype ==# 'terminal'
-            call hw#tasklist#add(hw#functor#new({ -> execute('startinsert', '') }, ""))
+            call hw#tasklist#add(hw#functor#new({ -> execute(['startinsert',], '') }, ""))
         endif
     endif
 

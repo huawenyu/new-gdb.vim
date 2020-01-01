@@ -905,7 +905,19 @@ function! s:prototype.on_start(model, state, match_list) abort
         endif
         silent! lopen
     endif
+
+    call hw#tasklist#add(
+                \ hw#functor#new(
+                \    {-> execute(
+                \       ['echomsg "Debug ready to go."',
+                \        'windo redraw!',
+                \        'call new#util#post("client", "info line\n")',
+                \       ], '')
+                \    }, ""
+                \  )
+                \)
 endfunction
+
 
 function! s:prototype.on_load_bt(...)
     if self._show_backtrace && filereadable(s:gdb_bt_qf)

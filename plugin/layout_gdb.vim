@@ -1143,7 +1143,11 @@ function! NeobuggerNew(mode, bin, args)
 
     if a:mode ==# 'local'
         let s:this.debug_mode = 0
-        call new#open('gdb_local_vert')
+        if g:neobugger_local_backtrace
+            call new#open('gdb_local_horiz')
+        else
+            call new#open('gdb_local_vert')
+        endif
     elseif a:mode ==# 'server'
         let s:this.debug_mode = 1
         call new#open('gdb_remote_horiz')

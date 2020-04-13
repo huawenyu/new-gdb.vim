@@ -34,7 +34,12 @@ if !exists("s:init")
 
     let s:_initialized = 0
     let s:_opened = 0
-    let s:const_bash = "cat ~/.bashrc > /tmp/tmp.bashrc; echo \"PS1='newRuntime $ '\" >> /tmp/tmp.bashrc; bash --rcfile /tmp/tmp.bashrc"
+    let s:const_bash = "cat ~/.bashrc > /tmp/tmp.bashrc; 
+          \ echo \"PS1='newRuntime $ '\" >> /tmp/tmp.bashrc; 
+          \ echo \"+o emacs\" >> /tmp/tmp.bashrc; 
+          \ echo \"+o vi\" >> /tmp/tmp.bashrc; 
+          \ bash --noediting --rcfile /tmp/tmp.bashrc 
+          \"
     " 0 nothing, 1 smart-eval, 2 wait watch
     let s:eval_mode = 0
 endif

@@ -135,7 +135,7 @@ let s:gdb_control = {
         \          },
         \          {   "match":   [ '\v^\w+:\d+: Connection refused.', ],
         \              "hint":    "gdb.RemoteConnectFail",
-        \              "test":    "127.0.0.1:9999: Connection refused.",
+        \              "test":    "dut:9999: Connection refused.",
         \              "action":  "",
         \              "next":    "pause",
         \          },
